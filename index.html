@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bryzhak_Plan_site</title>
+    <link rel="stylesheet" href="./css/styles.css">
+    <script src="./js/index.js"></script>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-top">
+            <div>
+                <div class="header-title">Мій план</div>
+                <div class="header-sub">90 → 82 кг · ~12 тижнів</div>
+            </div>
+            <button class="cal-btn" onclick="openCalModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                До календаря
+            </button>
+        </div>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('workout')">Тренування</button>
+            <button class="tab" onclick="switchTab('nutrition')">Харчування</button>
+            <button class="tab" onclick="switchTab('tips')">Поради</button>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <!-- WORKOUT -->
+        <div id="sec-workout" class="section active">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-val">90 кг</div>
+                    <div class="stat-lbl">Зараз</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-val">82 кг</div>
+                    <div class="stat-lbl">Ціль</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-val">~12 тиж</div>
+                    <div class="stat-lbl">Термін</div>
+                </div>
+            </div>
+            <div class="week-sched" id="week-sched"></div>
+            <div id="workout-content"></div>
+        </div>
+
+        <!-- NUTRITION -->
+        <div id="sec-nutrition" class="section">
+            <div class="note">Без яєць · ~2000–2100 ккал/день · Білок 155–170 г · 5 прийомів їжі</div>
+            <div class="week-nav">
+                <span class="week-nav-label">Тиждень:</span>
+                <button class="wk-btn active" id="btn-w1" onclick="showWeek(1)">1</button>
+                <button class="wk-btn" id="btn-w2" onclick="showWeek(2)">2</button>
+            </div>
+            <div id="nutrition-content"></div>
+        </div>
+
+        <!-- TIPS -->
+        <div id="sec-tips" class="section">
+            <div class="card">
+                <div class="tip-section-title">Тренування</div>
+                <div class="tip-row"><span class="tip-icon">⏱</span><span>Розминка 5–7 хв перед кожним тренуванням —
+                        суглобова гімнастика + легка кардіо</span></div>
+                <div class="tip-row"><span class="tip-icon">🏋</span><span>Вага гантелей: останні 2 повтори мають бути
+                        важкими, але без втрати техніки</span></div>
+                <div class="tip-row"><span class="tip-icon">🏃</span><span>Пробіжки у розмовному темпі — 20–30 хв
+                        достатньо для жироспалювання</span></div>
+                <div class="tip-row"><span class="tip-icon">⏸</span><span>Відпочинок між підходами 60–90 сек — не
+                        більше, щоб пульс залишався підвищеним</span></div>
+                <div class="tip-row"><span class="tip-icon">📈</span><span>Кожні 2 тижні збільшуй вагу на 1–2 кг або
+                        додавай 1–2 повтори в підході</span></div>
+                <div class="tip-row"><span class="tip-icon">🤸</span><span>Розтяжка 5–10 хв після тренування — знижує
+                        болючість м'язів наступного дня</span></div>
+            </div>
+            <div class="card">
+                <div class="tip-section-title">Харчування</div>
+                <div class="tip-row"><span class="tip-icon">💧</span><span>Вода 2.5–3 л на день — в дні тренувань
+                        обов'язково, навіть якщо не хочеться</span></div>
+                <div class="tip-row"><span class="tip-icon">🕐</span><span>Їж кожні 3–4 години, не пропускай прийоми —
+                        це запобігає переїданню ввечері</span></div>
+                <div class="tip-row"><span class="tip-icon">🥩</span><span>Білок (курка, риба, сир, йогурт) — в кожному
+                        прийомі їжі без винятку</span></div>
+                <div class="tip-row"><span class="tip-icon">🌙</span><span>Вечеря: тільки білок + овочі, без каш і хліба
+                        після 18:00</span></div>
+                <div class="tip-row"><span class="tip-icon">🚫</span><span>Виключи цукор, солодкі напої, фастфуд і
+                        алкоголь на весь період схуднення</span></div>
+                <div class="tip-row"><span class="tip-icon">⚖️</span><span>Зважуйся раз на тиждень вранці натще — не
+                        частіше, щоб не демотивуватись</span></div>
+            </div>
+            <div class="card">
+                <div class="tip-section-title">Відновлення</div>
+                <div class="tip-row"><span class="tip-icon">😴</span><span>Сон 7–8 годин — найважливіший фактор: без сну
+                        жир горить повільно, м'язи не ростуть</span></div>
+                <div class="tip-row"><span class="tip-icon">🚶</span><span>Якщо дуже болять м'язи — легка прогулянка
+                        20–30 хв замість відпочинку лежачи</span></div>
+                <div class="tip-row"><span class="tip-icon">❤️</span><span>Слухай тіло: різкий біль у суглобах — сигнал
+                        зупинитись і перевірити техніку</span></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Calendar Modal -->
+    <div class="modal-overlay" id="cal-modal" onclick="closeIfOverlay(event)">
+        <div class="modal">
+            <div class="modal-title">Додати до календаря</div>
+            <div class="modal-sub">Вкажи дату першого понеділка тренувань — і я створю .ics файл з усіма тренуваннями на
+                12 тижнів для Apple Calendar.</div>
+            <div class="modal-label">Дата початку (понеділок)</div>
+            <input type="date" class="date-input" id="start-date">
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeCalModal()">Скасувати</button>
+                <button class="btn-primary" onclick="generateICS()">Завантажити .ics</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Файл завантажено!</div>
+
+</body>
+
+</html>
