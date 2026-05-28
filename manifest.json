@@ -10,7 +10,7 @@
   "lang": "uk",
   "icons": [
     {
-      "src": ".//icons/icon-192.png",
+      "src": ".//icons/main-icon-192.png.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
