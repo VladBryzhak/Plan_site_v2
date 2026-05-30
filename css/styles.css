@@ -728,3 +728,245 @@ body.dark .offline-banner {
         font-size: 17px;
     }
 }
+
+/* =====================
+   ACCORDION — техніка вправ
+   ===================== */
+
+/* Підказка зверху картки */
+.video-hint {
+    font-size: 12px;
+    color: var(--teal);
+    margin-bottom: 6px;
+    padding: 0 2px;
+}
+
+/* Рядок вправи з відео — клікабельний */
+.ex-row.has-video {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.ex-row.has-video:active {
+    opacity: 0.7;
+}
+
+/* Права частина рядка (сети + стрілка) */
+.ex-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/* Стрілка-шеврон */
+.ex-arrow {
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+/* Стрілка повертається коли відкрито */
+.ex-row.active .ex-arrow {
+    transform: rotate(180deg);
+}
+
+/* Підсвічування активного рядка */
+.ex-row.active {
+    color: var(--teal);
+}
+
+.ex-row.active .ex-name {
+    color: var(--teal);
+}
+
+.ex-row.active .ex-sets {
+    color: var(--teal);
+    opacity: 0.7;
+}
+
+/* Accordion контейнер */
+.ex-accordion {
+    display: none;
+    padding: 10px 0 8px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn 0.2s ease;
+}
+
+.ex-accordion.open {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 16:9 обгортка для YouTube iframe */
+.yt-wrap {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--gray-bg);
+    margin-bottom: 8px;
+}
+
+.yt-wrap iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Текстова підказка під відео */
+.ex-tip {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    padding: 2px 2px 4px;
+    border-left: 2px solid var(--teal);
+    padding-left: 10px;
+    margin: 0;
+}
+
+/* =====================
+   YOUTUBE АКОРДЕОН (додано в v3)
+   ===================== */
+
+/* Підказка над вправами */
+.video-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+}
+
+/* Рядок вправи з відео */
+.ex-row.has-video {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.12s;
+}
+
+.ex-row.has-video:active {
+    background: var(--bg);
+}
+
+.ex-row.has-video.active {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+}
+
+/* Права частина рядка (сети + стрілка) */
+.ex-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Стрілка-індикатор */
+.ex-arrow {
+    font-size: 14px;
+    color: var(--muted);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+.ex-row.has-video.active .ex-arrow {
+    transform: rotate(180deg);
+}
+
+/* Акордеон-блок */
+.ex-accordion {
+    display: none;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.ex-accordion.open {
+    display: block;
+    padding: 10px 0 12px;
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 16:9 контейнер для YouTube iframe */
+.yt-wrap {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: #000;
+    margin-bottom: 10px;
+}
+
+.yt-wrap iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Підказка техніки */
+.ex-tip {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+    padding: 6px 4px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.ex-tip-icon {
+    flex-shrink: 0;
+    font-size: 15px;
+}
+
+/* Кнопка "інше відео" */
+.ex-reload-btn {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-family: var(--font);
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.ex-reload-btn:active {
+    opacity: 0.7;
+}

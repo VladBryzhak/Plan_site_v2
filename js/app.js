@@ -1,9 +1,11 @@
 /* =====================
-   app.js — логіка додатку v2
-   Нові фічі: темна тема, відмітка тренувань
+   app.js — логіка додатку v3
+   Нові фічі: YouTube-акордеон з рандомним відео, темна тема, відмітка тренувань
    ===================== */
 
 let activeDay = 0;
+/* Зберігаємо поточний відкритий акордеон {dayIdx, exIdx} */
+let openAccordion = null;
 
 /* ---- Ініціалізація ---- */
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,54 +21,35 @@ document.addEventListener('DOMContentLoaded', () => {
 /* =====================
    ТЕМНА ТЕМА
    ===================== */
-
 function initTheme() {
-  /* Читаємо збережений вибір або системний preference */
   const saved = localStorage.getItem('theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const isDark = saved ? saved === 'dark' : prefersDark;
-  setTheme(isDark);
+  setTheme(saved ? saved === 'dark' : prefersDark);
 }
 
 function toggleTheme() {
-  const isDark = document.body.classList.contains('dark');
-  setTheme(!isDark);
+  setTheme(!document.body.classList.contains('dark'));
 }
 
 function setTheme(isDark) {
   document.body.classList.toggle('dark', isDark);
   localStorage.setItem('theme', isDark ? 'dark' : 'light');
-
-  /* Перемикаємо іконки */
   document.getElementById('icon-sun').style.display  = isDark ? 'block' : 'none';
   document.getElementById('icon-moon').style.display = isDark ? 'none'  : 'block';
-
-  /* PWA theme-color у браузері */
   document.getElementById('theme-color-meta').content = isDark ? '#141413' : '#1D9E75';
 }
 
 /* =====================
    ВІДМІТКА ТРЕНУВАНЬ
    ===================== */
-
-/*
-  Ключ збереження: 'done_YYYY-MM-DD_dayIndex'
-  Наприклад: 'done_2025-06-02_0' — понеділок тиждня 2025-06-02
-  Це дозволяє трекати кожен конкретний день, а не просто "день тижня"
-*/
-
 function getTodayKey(dayIndex) {
-  /* Повертає ключ для поточного тижня + дня */
   const today = new Date();
-  /* Знаходимо понеділок поточного тижня */
-  const dow = today.getDay() === 0 ? 6 : today.getDay() - 1; /* Пн=0, Нд=6 */
+  const dow = today.getDay() === 0 ? 6 : today.getDay() - 1;
   const monday = new Date(today);
   monday.setDate(today.getDate() - dow);
   monday.setHours(0, 0, 0, 0);
-
   const target = new Date(monday);
   target.setDate(monday.getDate() + dayIndex);
-
   const yyyy = target.getFullYear();
   const mm   = String(target.getMonth() + 1).padStart(2, '0');
   const dd   = String(target.getDate()).padStart(2, '0');
@@ -81,31 +64,24 @@ function toggleDone(dayIndex) {
   const key     = getTodayKey(dayIndex);
   const current = localStorage.getItem(key) === 'true';
   localStorage.setItem(key, String(!current));
-
-  /* Оновлюємо UI */
   renderSched();
   renderWorkout();
   updateDoneCount();
-
   showToast(current ? 'Відмітку знято' : '✓ Тренування виконано!');
 }
 
 function updateDoneCount() {
-  /* Рахуємо виконані тренування за поточний тиждень */
   let count = 0;
-  for (let i = 0; i < 7; i++) {
-    if (isDone(i)) count++;
-  }
+  for (let i = 0; i < 7; i++) { if (isDone(i)) count++; }
   document.getElementById('stat-done-val').textContent = count;
 }
 
 /* =====================
    ТИЖНЕВИЙ РОЗКЛАД
    ===================== */
-
 function getTodayIndex() {
   const dow = new Date().getDay();
-  return dow === 0 ? 6 : dow - 1; /* Пн=0 … Нд=6 */
+  return dow === 0 ? 6 : dow - 1;
 }
 
 function renderSched() {
@@ -123,24 +99,86 @@ function renderSched() {
 }
 
 function selectDay(index) {
+  if (activeDay !== index) openAccordion = null; /* скидаємо акордеон при зміні дня */
   activeDay = index;
   renderSched();
   renderWorkout();
 }
 
 /* =====================
-   РЕНДЕР ТРЕНУВАННЯ
+   YOUTUBE АКОРДЕОН
    ===================== */
 
+/* Рандомно обирає один відеоID з масиву */
+function pickRandomVideo(videos) {
+  return videos[Math.floor(Math.random() * videos.length)];
+}
+
+function toggleExercise(exIndex) {
+  const w = WORKOUTS[activeDay];
+  const ex = w.exercises[exIndex];
+  if (!ex.videos || ex.videos.length === 0) return;
+
+  /* Якщо цей самий акордеон вже відкритий — закриваємо */
+  const isSame = openAccordion && openAccordion.day === activeDay && openAccordion.ex === exIndex;
+  openAccordion = isSame ? null : { day: activeDay, ex: exIndex };
+
+  renderWorkout();
+
+  /* Скролимо до відкритого акордеону */
+  if (openAccordion) {
+    setTimeout(() => {
+      const el = document.getElementById(`acc-${exIndex}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+}
+
+/* =====================
+   РЕНДЕР ТРЕНУВАННЯ
+   ===================== */
 function renderWorkout() {
   const w         = WORKOUTS[activeDay];
   const done      = isDone(activeDay);
   const isRestDay = w.type === 'gray';
-
-  const iconMap = { teal: 'icon-teal', blue: 'icon-blue', coral: 'icon-coral', gray: 'icon-gray' };
+  const iconMap   = { teal: 'icon-teal', blue: 'icon-blue', coral: 'icon-coral', gray: 'icon-gray' };
   const cardClass = done ? 'card done-card' : 'card';
 
-  /* Кнопка відмітки — тільки для активних тренувань */
+  const exercisesHTML = w.exercises.map((e, i) => {
+    const hasVideo    = e.videos && e.videos.length > 0;
+    const isOpen      = openAccordion && openAccordion.day === activeDay && openAccordion.ex === i;
+    const rowClass    = ['ex-row', hasVideo ? 'has-video' : '', isOpen ? 'active' : ''].join(' ').trim();
+    const videoId     = (isOpen && hasVideo) ? pickRandomVideo(e.videos) : null;
+
+    const accordionHTML = (isOpen && videoId) ? `
+      <div class="ex-accordion open" id="acc-${i}">
+        <div class="yt-wrap">
+          <iframe
+            src="https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1"
+            title="Техніка виконання: ${e.name}"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy">
+          </iframe>
+        </div>
+        ${e.tip ? `<p class="ex-tip"><span class="ex-tip-icon">💡</span>${e.tip}</p>` : ''}
+        <button class="ex-reload-btn" onclick="event.stopPropagation(); reloadVideo(${i})">
+          ↻ Інше відео
+        </button>
+      </div>` : `<div class="ex-accordion" id="acc-${i}"></div>`;
+
+    return `
+      <div class="${rowClass}" onclick="${hasVideo ? `toggleExercise(${i})` : ''}">
+        <span class="ex-name">${e.name}</span>
+        <div class="ex-right">
+          <span class="ex-sets">${e.sets}</span>
+          ${hasVideo ? '<span class="ex-arrow">▾</span>' : ''}
+        </div>
+      </div>
+      ${accordionHTML}`;
+  }).join('');
+
   const doneBtn = isRestDay ? '' : `
     <button class="done-btn ${done ? 'marked' : ''}" onclick="toggleDone(${activeDay})">
       ${done
@@ -157,19 +195,25 @@ function renderWorkout() {
           <div class="card-sub">${w.sub}</div>
         </div>
       </div>
-      ${w.exercises.map(e => `
-        <div class="ex-row">
-          <span class="ex-name">${e.name}</span>
-          <span class="ex-sets">${e.sets}</span>
-        </div>`).join('')}
+      <p class="video-hint">Натисни на вправу ▾ щоб переглянути відео техніки</p>
+      ${exercisesHTML}
       ${doneBtn}
     </div>`;
+}
+
+/* Перезавантажує відео (обирає нове рандомне) */
+function reloadVideo(exIndex) {
+  /* Просто ре-рендеримо — pickRandomVideo дасть новий ID */
+  renderWorkout();
+  setTimeout(() => {
+    const el = document.getElementById(`acc-${exIndex}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
 }
 
 /* =====================
    ХАРЧУВАННЯ
    ===================== */
-
 function renderNutrition(weekNum) {
   const data = weekNum === 1 ? WEEK1 : WEEK2;
   document.getElementById('nutrition-content').innerHTML = data.map(d => `
@@ -195,7 +239,6 @@ function showWeek(n) {
 /* =====================
    ВКЛАДКИ
    ===================== */
-
 function switchTab(name) {
   const tabNames = ['workout', 'nutrition', 'tips'];
   document.querySelectorAll('.tab').forEach((btn, i) => {
@@ -208,46 +251,34 @@ function switchTab(name) {
 /* =====================
    ОФЛАЙН БАНЕР
    ===================== */
-
 function initOfflineBanner() {
-  /* Додаємо банер у DOM */
   const banner = document.createElement('div');
   banner.className = 'offline-banner';
   banner.id = 'offline-banner';
-  banner.textContent = '⚡ Офлайн-режим — дані збережено локально';
+  banner.textContent = '⚡ Офлайн-режим — відео недоступні, решта працює';
   document.body.prepend(banner);
-
-  window.addEventListener('offline', () => {
-    document.getElementById('offline-banner').classList.add('show');
-  });
-
-  window.addEventListener('online', () => {
+  window.addEventListener('offline', () => document.getElementById('offline-banner').classList.add('show'));
+  window.addEventListener('online',  () => {
     document.getElementById('offline-banner').classList.remove('show');
-    showToast('З\'єднання відновлено 🌐');
+    showToast("З'єднання відновлено 🌐");
   });
-
-  /* Якщо вже офлайн при завантаженні */
-  if (!navigator.onLine) {
-    banner.classList.add('show');
-  }
+  if (!navigator.onLine) banner.classList.add('show');
 }
 
 /* =====================
-   SERVICE WORKER (PWA)
+   SERVICE WORKER
    ===================== */
-
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('./sw.js')
       .then(reg => console.log('SW зареєстровано:', reg.scope))
       .catch(err => console.warn('SW помилка:', err));
   }
 }
 
 /* =====================
-   МОДАЛЬНЕ ВІКНО КАЛЕНДАРЯ
+   КАЛЕНДАР (.ICS)
    ===================== */
-
 function openCalModal() {
   const today = new Date();
   const dow   = today.getDay();
@@ -258,65 +289,44 @@ function openCalModal() {
   document.getElementById('cal-modal').classList.add('open');
 }
 
-function closeCalModal() {
-  document.getElementById('cal-modal').classList.remove('open');
-}
-
-function closeIfOverlay(event) {
-  if (event.target === document.getElementById('cal-modal')) closeCalModal();
-}
-
-/* =====================
-   ГЕНЕРАЦІЯ .ICS
-   ===================== */
+function closeCalModal() { document.getElementById('cal-modal').classList.remove('open'); }
+function closeIfOverlay(e) { if (e.target === document.getElementById('cal-modal')) closeCalModal(); }
 
 function pad(n) { return String(n).padStart(2, '0'); }
-
 function toICSDate(date) {
-  return date.getFullYear() + pad(date.getMonth() + 1) + pad(date.getDate()) +
+  return date.getFullYear() + pad(date.getMonth()+1) + pad(date.getDate()) +
     'T' + pad(date.getHours()) + pad(date.getMinutes()) + '00';
 }
 
 function generateICS() {
   const startVal = document.getElementById('start-date').value;
   if (!startVal) { alert('Вкажи дату початку'); return; }
-
   const startDate = new Date(startVal + 'T07:00:00');
-  const WEEKS     = 12;
-
   const lines = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0',
-    'PRODID:-//Fitness Plan//UK',
-    'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-    'X-WR-CALNAME:Тренування',
-    'X-WR-TIMEZONE:Europe/Kiev',
+    'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Fitness Plan//UK',
+    'CALSCALE:GREGORIAN','METHOD:PUBLISH',
+    'X-WR-CALNAME:Тренування','X-WR-TIMEZONE:Europe/Kiev',
   ];
-
-  for (let w = 0; w < WEEKS; w++) {
+  for (let w = 0; w < 12; w++) {
     for (const ev of CAL_EVENTS) {
       const start = new Date(startDate);
-      start.setDate(start.getDate() + w * 7 + ev.dayOffset);
+      start.setDate(start.getDate() + w*7 + ev.dayOffset);
       start.setHours(7, 0, 0, 0);
       const end = new Date(start.getTime() + ev.dur * 60000);
-
       lines.push('BEGIN:VEVENT');
       lines.push(`UID:fitness-w${w}-d${ev.dayOffset}-${Date.now()}@fitplan`);
       lines.push('DTSTART:' + toICSDate(start));
       lines.push('DTEND:'   + toICSDate(end));
       lines.push('SUMMARY:' + ev.title);
-      lines.push('DESCRIPTION:' + CAL_DESCRIPTIONS[ev.descKey].replace(/\n/g, '\\n'));
+      lines.push('DESCRIPTION:' + CAL_DESCRIPTIONS[ev.descKey].replace(/\n/g,'\\n'));
       lines.push('END:VEVENT');
     }
   }
-
   lines.push('END:VCALENDAR');
-
   const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'trenuvanya.ics';
-  a.click();
+  a.href = url; a.download = 'trenuvanya.ics'; a.click();
   URL.revokeObjectURL(url);
   closeCalModal();
   showToast('Файл завантажено! Відкрий на iPhone 📅');
@@ -325,7 +335,6 @@ function generateICS() {
 /* =====================
    TOAST
    ===================== */
-
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;

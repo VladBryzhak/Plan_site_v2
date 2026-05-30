@@ -1,11 +1,9 @@
 /* =====================
-   sw.js — Service Worker
-   Відповідає за: офлайн-кеш, PWA
+   sw.js — Service Worker v3
    ===================== */
 
-const CACHE_NAME = 'fitness-plan-v2';
+const CACHE_NAME = 'fitness-plan-v3';
 
-/* Всі файли, які треба закешувати при першому відкритті */
 const FILES_TO_CACHE = [
   './',
   './index.html',
@@ -14,72 +12,51 @@ const FILES_TO_CACHE = [
   './js/app.js',
   './manifest.json',
   './icons/main-icon-192.png',
-  '/icons/icon-512.png',
-  /* Шрифти Google Fonts кешуються автоматично при першому завантаженні */
+  './icons/icon-512.png',
 ];
 
-/* ---- Install: кешуємо всі файли ---- */
 self.addEventListener('install', event => {
-  console.log('[SW] Install');
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('[SW] Кешую файли...');
-      return cache.addAll(FILES_TO_CACHE);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(FILES_TO_CACHE))
   );
-  /* Активуємо новий SW одразу, не чекаючи закриття вкладки */
   self.skipWaiting();
 });
 
-/* ---- Activate: видаляємо старий кеш ---- */
 self.addEventListener('activate', event => {
-  console.log('[SW] Activate');
   event.waitUntil(
-    caches.keys().then(keyList =>
-      Promise.all(
-        keyList
-          .filter(key => key !== CACHE_NAME)
-          .map(key => {
-            console.log('[SW] Видаляю старий кеш:', key);
-            return caches.delete(key);
-          })
-      )
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     )
   );
-  /* Беремо контроль над всіма вкладками одразу */
   self.clients.claim();
 });
 
-/* ---- Fetch: стратегія Cache First ----
-   1. Спочатку шукаємо в кеші
-   2. Якщо є — віддаємо з кешу (швидко, офлайн ✓)
-   3. Якщо немає — йдемо в мережу і зберігаємо в кеш
-*/
 self.addEventListener('fetch', event => {
-  /* Пропускаємо не-GET запити і chrome-extension */
   if (event.request.method !== 'GET') return;
   if (event.request.url.startsWith('chrome-extension://')) return;
 
-  event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      if (cachedResponse) {
-        /* Знайдено в кеші — повертаємо */
-        return cachedResponse;
-      }
+  /* Пропускаємо YouTube — відео не можна кешувати */
+  if (
+    event.request.url.includes('youtube.com') ||
+    event.request.url.includes('youtu.be') ||
+    event.request.url.includes('ytimg.com') ||
+    event.request.url.includes('yt3.ggpht.com')
+  ) return;
 
-      /* Не знайдено — йдемо в мережу */
-      return fetch(event.request).then(networkResponse => {
-        /* Зберігаємо відповідь у кеш для наступного разу */
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
+  /* Пропускаємо Google Fonts (вони мають власний кеш) */
+  if (event.request.url.includes('fonts.googleapis.com') ||
+      event.request.url.includes('fonts.gstatic.com')) return;
+
+  event.respondWith(
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
-        return networkResponse;
+        return response;
       }).catch(() => {
-        /* Мережа недоступна і файл не в кеші */
-        /* Для HTML-сторінок повертаємо головну сторінку */
         if (event.request.destination === 'document') {
           return caches.match('./index.html');
         }
